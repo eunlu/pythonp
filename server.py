@@ -7,11 +7,8 @@ import socket
 import select
 import urllib, json
 
-import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
 
-questions_count=3
+questions_count=10
 #question_done = [0] * (len(question2))
 score = [0]
 host = '127.0.0.1'
@@ -58,6 +55,11 @@ def get_question (question2,k):
     print question2[k]
     return question2[k].encode('utf-8')
 
+def get_question_score (score,k):
+    sc = '%s puan'%score[k]
+    print sc
+    return sc
+
 # CHECK IF GOOD ANSWER OR NOT
 def checkAnswer(answer2,agiven, qnb):
     test = False
@@ -90,6 +92,13 @@ def final_score(score):
                 winners.append(i + 1)
         print("The winners are players {}".format(winners))
 
+def is_number(s):
+    try:
+        res = int(eval(str(s)))
+        if type(res) == int:
+            return True
+    except:
+        return False
 
 # START THE NETWORK CODE
 # host = '192.168.26.86'
@@ -115,12 +124,12 @@ while (len(players) < max_players):
         data, addr = s.recvfrom(1024)
         print("{} bağlantı isteği gönderdi ".format(data))
         if len(players) == 0:
-            players.append([data, addr])
+            players.append([data, addr,0])
             s.sendto("Oyunun başlaması bekleniyor... ", players[0][1])
         else:
             for ijk in players:
                 if addr not in ijk[1]:
-                    players.append([data, addr])
+                    players.append([data, addr,0])
                     print("{} oyuna bağlandı".format(ijk[0]))
                     s.sendto("Oyunun başlaması bekleniyor... ", ijk[1])
                     #for ii in players:
@@ -136,53 +145,64 @@ for i in range(len(players)):
     except:
         pass
 
-
+"""
 for k in range(questions_count):
     print("Soru : {}".format(k+1))
     que_s = get_question(question2,k)
     opt_s = get_options(answer2,k)
     for ipl in range(len(players)):
-        #try:
+        try:
+            s.sendto(que_s, players[ipl][1])
+            s.sendto(opt_s, players[ipl][1])
+            agiven = ""
+            ready = select.select([s], [], [], 20)
+            if ready[0]:
+                agiven, addr = s.recvfrom(1024)
+                print players[ipl][0]," "+answer2[k][int(agiven)],"cevap verdi"
+                agiven_result = checkAnswer(int(agiven), k)
+                if agiven_result == True:
+                    dcevap_text = 'Doğru cevap verdiniz'.encode('utf-8')
+                    s.sendto(dcevap_text,players[ipl][1])
+                else:
+                    ycevap_text = 'Yanlış cevap verdiniz'.encode('utf-8')
+                    s.sendto(ycevap_text,players[ipl][1])
+
+        except:
+            pass
+"""
+for k in range(questions_count):
+    print("Soru : {}".format(k+1))
+    que_s = get_question(question2,k)
+    score_s = get_question_score(question_score,k)
+    opt_s = get_options(answer2,k)
+    for ipl in range(len(players)):
         s.sendto(que_s, players[ipl][1])
+        s.sendto(score_s, players[ipl][1])
         s.sendto(opt_s, players[ipl][1])
-        agiven = ""
+        agv = ''
         ready = select.select([s], [], [], 20)
         if ready[0]:
-            agiven, addr = s.recvfrom(1024)
-        print("{}".format(agiven))
-        agiven_result = checkAnswer(answer2,agiven, k)
-        if agiven_result == True:
-            dcevap_text = 'Doğru cevap verdiniz'
-            s.sendto(dcevap_text,players[ipl][1])
-        else:
-            ycevap_text = 'Yanlış cevap verdiniz'
-            s.sendto(ycevap_text,players[ipl][1])
+            agv, addr = s.recvfrom(1024)
+            agiven = int(agv)
+            if is_number(agiven) == True:
+                pass
+            else:
+                agiven = 0
+            print players[ipl][0]," "+answer2[k][agiven],"cevabı verdi"
+            agiven_result = checkAnswer(answer2,agiven, k)
+            if agiven_result == True:
+                players[ipl][2] = players[ipl][2]+question_score[k]
+                dcevap_text = u'Dogru cevap verdiniz.%s puaniniz oldu'%players[ipl][2]
+                s.sendto(dcevap_text,players[ipl][1])
+            else:
+                ycevap_text = u'Yanlis cevap verdiniz %s puaniniz var'%players[ipl][2]
+                s.sendto(ycevap_text,players[ipl][1])
 
-        #except:
-            #pass
 
-
-'''
-nb = 3
-for k in range(nb):
-    print("Soru "+str(k+1))
-    que_s = get_question(question2,k)
-    opt_s = get_options(answer2,k)
-    #print("ENTER FOR")
-    for i in range(len(players)):
-        s.sendto(que_s, players[i][1])
-        s.sendto(opt_s, players[i][1])
-        agiven = ""
-        ready = select.select([s], [], [], 10)
-        if ready[0]:
-            agiven, addr = s.recvfrom(1024)
-            print("agiven is : {}".format(agiven))
-            checkAnswer(answer2,agiven,k)
-'''
 
 for i in range(len(players)):
     try:
-        s.sendto("Oyun bitti", players[i])
+        s.sendto("Oyun bitti", players[i][1])
     except:
         pass
 
