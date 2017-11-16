@@ -2,18 +2,17 @@
 import socket
 import threading
 import time
+import pickle
 
 tEv = threading.Event()
 tShutdown = threading.Event()
-def unc (txt):
-    return unicode(str(txt),'utf-8')
 
 def receving(name, sock):
     shutdown = False
     while not shutdown:
         try:
             data,addr = sock.recvfrom(1024)
-            print(str(data.encode('utf-8')))
+            print(str(data))
             if '?' in data:
                 tEv.set()
             if data == "The game is finished":  # message from server to stop
@@ -38,7 +37,7 @@ rT = threading.Thread(target=receving, args=("RecvThread", s))
 rT.start()
 
 # Join the game
-alias = raw_input(unc('Adınız :'))
+alias = raw_input("Adınız: ")
 s.sendto(alias, server)
 
 running = True
@@ -48,7 +47,9 @@ while running:
         #message = raw_input(alias + ", Cevabınız ?  ->\n ")
         message = raw_input("")
         if message != '':
-            s.sendto(alias + ": " + message, server)
+            #s.sendto(alias + ": " + message, server)
+            s.sendto(message, server)
+
     if tShutdown.is_set():
         running = False
 
