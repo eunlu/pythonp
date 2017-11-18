@@ -8,26 +8,27 @@ import select
 import urllib, json
 
 
-questions_count=10
-#question_done = [0] * (len(question2))
-score = [0]
-host = '127.0.0.1'
-port = 5000
-players = []
-question2=[]
-answer2 = []
-right_answers2 = []
-question_score = []
-secs = 10
-max_players = 1
+questions_count=10 #kaç soruluk bir yarışma olacak
+score = [0] #oyuncu skorları için liste
+host = '127.0.0.1' # sistemin çalışacağı ip adresi
+port = 5000 # port numarası
+players = [] #oyuncu listesi
+question2=[] #soru listesi
+answer2 = [] #soru şıkları listesi
+right_answers2 = [] #doğru cevpların listesi
+question_score = [] #soru puanlarının listesi
+secs = 10 # belli bir limit değilde belli bir sürede başlayacak yarışma için süre tanımı
+max_players = 1 #aynı anda yarışacak kişi sayısı
 
+# yarışma bilgilerini alacağımız link
 url = "http://pendik.net/iya/api/app/soru_istek/"+str(questions_count)
 response = urllib.urlopen(url)
+# yarışma bilgilerinin decode edilmesi ve değişkene aktarılması
 data = json.loads(response.read())
 #print json.dumps(data, sort_keys=True, indent=4)
 
-#print data[0]['soru_text']
 
+# yarışma bilgilerinin tanımlı arraylara aktarımı
 for i in data:
     #print i['soru_text'],"\n\n"
     question2.append(i['soru_text'])
@@ -35,32 +36,18 @@ for i in data:
     right_answers2.append(i['soru_dogru_cevap'])
     question_score.append(i['soru_puan'])
 
-#print question2
-#print answer2
-
-
-
-
-
-# SHOW THE POSSIBLE ANSWERS
-def displayA(question, answer, i):
-    a = answer[i]
-    order = np.arange(4)
-    #shuffle(order)  # create list from 1 to 4 in different order --> to print the answers in random order
-    a_display = [[a[order[0]], a[order[1]]], [a[order[2]], a[order[3]]]]
-    print(a_display)
-
-
+#yarışma sırasında bir soru getirecek olan fonksiyon
 def get_question (question2,k):
     print question2[k]
     return question2[k].encode('utf-8')
 
+#yarışma sırasında bir sorunun puanını getirecek olan fonksiyon
 def get_question_score (score,k):
     sc = '%s puan'%score[k]
     print sc
     return sc
 
-# CHECK IF GOOD ANSWER OR NOT
+#yarışma sırasında verilen cevabın doğruluğunu kontrol eden fonksiyon
 def checkAnswer(answer2,agiven, qnb):
     test = False
     if agiven == right_answers2[qnb]:
@@ -69,6 +56,7 @@ def checkAnswer(answer2,agiven, qnb):
         return test
     else:
         return test
+#yarışma sırasında bir soru şıklarını getiren fonksiyon
 def get_options(answer2,k):
     ret = ''
     say =0
@@ -78,7 +66,7 @@ def get_options(answer2,k):
     print ret
     return ret.encode('utf-8')
 
-# END OF GAME, DISPLAY OF SCORES
+#yarışma sonunda sıralamayı ve kazananı belirleyecek olan fonmksiyon
 def final_score(score):
     print("The scores are {}".format(score))
 
@@ -92,6 +80,7 @@ def final_score(score):
                 winners.append(i + 1)
         print("The winners are players {}".format(winners))
 
+#yarışma sırasında yarışmacıların verdikleri cevapların 0-1-2-3 ten biri olması durumunu kontrol eden fonksiyon
 def is_number(s):
     try:
         res = int(eval(str(s)))
@@ -100,24 +89,21 @@ def is_number(s):
     except:
         return False
 
-# START THE NETWORK CODE
-# host = '192.168.26.86'
 
 
-# creation of socket object UDP and bind
+
+# bir tane soket oluşturulması ve bağlanması 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.bind((host, port))
-# socket non blocking --> will always try to grab datas from the stream
-# not block it
+#oluşturulan soketin her zaman bağlı kalması ve oradan ne veri gelirlse gelsin yakalanması 
 s.setblocking(0)
-
 print('Server başladı.')
 
 
 
 
 
-# WAIT FOR PLAYERS TO JOIN
+# yarışmacıların sisteme girmesi için beklenmesi 
 while (len(players) < max_players):
     ready = select.select([s], [], [], 1)
     if ready[0]:
@@ -135,9 +121,9 @@ while (len(players) < max_players):
                     #for ii in players:
                     #    s.sendto("{} oyuna bağlandı.".format(ii[0]), ii[1])
 
-print players
 
-# START GAME
+
+# yarışma başladığı bilgisinin yarışmacılara gönderilmesi 
 print("Oyun başlıyor")
 for i in range(len(players)):
     try:
@@ -145,31 +131,7 @@ for i in range(len(players)):
     except:
         pass
 
-"""
-for k in range(questions_count):
-    print("Soru : {}".format(k+1))
-    que_s = get_question(question2,k)
-    opt_s = get_options(answer2,k)
-    for ipl in range(len(players)):
-        try:
-            s.sendto(que_s, players[ipl][1])
-            s.sendto(opt_s, players[ipl][1])
-            agiven = ""
-            ready = select.select([s], [], [], 20)
-            if ready[0]:
-                agiven, addr = s.recvfrom(1024)
-                print players[ipl][0]," "+answer2[k][int(agiven)],"cevap verdi"
-                agiven_result = checkAnswer(int(agiven), k)
-                if agiven_result == True:
-                    dcevap_text = 'Doğru cevap verdiniz'.encode('utf-8')
-                    s.sendto(dcevap_text,players[ipl][1])
-                else:
-                    ycevap_text = 'Yanlış cevap verdiniz'.encode('utf-8')
-                    s.sendto(ycevap_text,players[ipl][1])
-
-        except:
-            pass
-"""
+# yarışma döngüsü
 for k in range(questions_count):
     print("Soru : {}".format(k+1))
     que_s = get_question(question2,k)
@@ -199,12 +161,14 @@ for k in range(questions_count):
                 s.sendto(ycevap_text,players[ipl][1])
 
 
-
+# yarışmacılara yarışma bitti bilgisinin gönderilmesi 
 for i in range(len(players)):
     try:
         s.sendto("Oyun bitti", players[i][1])
     except:
         pass
 
+# skor hesaplaması ve yarışmacılara sonuçların gönderilmesi 
 final_score(score)
+# çok yakmasın diye soketin kapatılması :)
 s.close()
