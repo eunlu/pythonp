@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import numpy as np
+#import numpy as np
 #from numpy.random import shuffle
 #from random import randint
 import socket
@@ -92,10 +92,10 @@ def is_number(s):
 
 
 
-# bir tane soket oluşturulması ve bağlanması 
+# bir tane soket oluşturulması ve bağlanması
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.bind((host, port))
-#oluşturulan soketin her zaman bağlı kalması ve oradan ne veri gelirlse gelsin yakalanması 
+#oluşturulan soketin her zaman bağlı kalması ve oradan ne veri gelirlse gelsin yakalanması
 s.setblocking(0)
 print('Server başladı.')
 
@@ -103,7 +103,7 @@ print('Server başladı.')
 
 
 
-# yarışmacıların sisteme girmesi için beklenmesi 
+# yarışmacıların sisteme girmesi için beklenmesi
 while (len(players) < max_players):
     ready = select.select([s], [], [], 1)
     if ready[0]:
@@ -123,7 +123,7 @@ while (len(players) < max_players):
 
 
 
-# yarışma başladığı bilgisinin yarışmacılara gönderilmesi 
+# yarışma başladığı bilgisinin yarışmacılara gönderilmesi
 print("Oyun başlıyor")
 for i in range(len(players)):
     try:
@@ -161,14 +161,14 @@ for k in range(questions_count):
                 s.sendto(ycevap_text,players[ipl][1])
 
 
-# yarışmacılara yarışma bitti bilgisinin gönderilmesi 
+# yarışmacılara yarışma bitti bilgisinin gönderilmesi
 for i in range(len(players)):
     try:
         s.sendto("Oyun bitti", players[i][1])
     except:
         pass
 
-# skor hesaplaması ve yarışmacılara sonuçların gönderilmesi 
+# skor hesaplaması ve yarışmacılara sonuçların gönderilmesi
 final_score(score)
 # çok yakmasın diye soketin kapatılması :)
 s.close()
