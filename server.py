@@ -104,15 +104,17 @@ s.bind((host, port))
 s.setblocking(0)
 print('Server başladı.')
 
+
 # yarışmacıların sisteme girmesi için beklenmesi
 while (len(players) < max_players):
     ready = select.select([s], [], [], 1)
     if ready[0]:
         data, addr = s.recvfrom(1024)
+        #data_loaded = json.loads(data)
         print("{} bağlantı isteği gönderdi ".format(data))
         if len(players) == 0:
             players.append([data, addr, 0])
-            s.sendto("Oyunun başlaması bekleniyor... ", players[0][1])
+            s.sendto('Oyunun başlaması bekleniyor', players[0][1])
         else:
             for ijk in players:
                 if addr not in ijk[1]:
